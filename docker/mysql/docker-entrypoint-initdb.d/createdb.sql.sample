@@ -1,0 +1,59 @@
+CREATE DATABASE IF NOT EXISTS `desafio-fullstack`;
+
+USE `desafio-fullstack`;
+
+CREATE TABLE `groups` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `groups` VALUES (1,'Grupo 1','2019-12-06 12:00:00','2019-12-06 12:00:00');
+
+CREATE TABLE `users` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `group_id` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `users_email_unique` (`email`),
+  KEY `users_group_id_foreign` (`group_id`),
+  CONSTRAINT `users_group_id_foreign` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `users` VALUES (1,'Usuario 1','usuario1@test.com.br',1,'2019-12-06 12:00:00','2019-12-06 12:00:00');
+
+CREATE TABLE `files` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `filename` varchar(255) NOT NULL,
+  `mime` varchar(255) NOT NULL,
+  `path` varchar(255) NOT NULL,
+  `size` int(11) NOT NULL,
+  `register_user_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `files_register_user_id_foreign` (`register_user_id`),
+  CONSTRAINT `files_register_user_id_foreign` FOREIGN KEY (`register_user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `files` VALUES (1,'photo1.jpg','image/jpeg','public/images',1024,1,'2019-12-06 12:00:00','2019-12-06 12:00:00');
+
+CREATE TABLE `user_file` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `file_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_file_user_id_foreign` (`user_id`),
+  CONSTRAINT `user_file_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  KEY `user_file_file_id_foreign` (`file_id`),
+  CONSTRAINT `user_file_file_id_foreign` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `user_file` VALUES (1,1,1);
+
+FLUSH PRIVILEGES ;

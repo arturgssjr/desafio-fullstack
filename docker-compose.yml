@@ -1,0 +1,90 @@
+version: "3"
+
+networks:
+  frontend:
+    driver: ${NETWORKS_DRIVER}
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.200.0.0/24
+  backend:
+    driver: ${NETWORKS_DRIVER}
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.201.0.0/24
+
+volumes:
+  mysql:
+    driver: ${VOLUMES_DRIVER}
+
+services:
+  # HAProxy
+  haproxy:
+    image: haproxy:2.1
+    command: ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg", "-d"]
+    ports:
+      - 80:80
+    volumes:
+      - ./docker/haproxy/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    links:
+      - api
+      - web
+    networks:
+      frontend:
+        ipv4_address: 172.200.0.254
+        aliases:
+          - haproxy
+          - web.desafio-fullstack.com.br
+      backend:
+        ipv4_address: 172.201.0.254
+        aliases:
+          - haproxy
+          - api.desafio-fullstack.com.br
+
+  # Backend
+  api:
+    build:
+      context: docker/apache-php
+      dockerfile: Dockerfile
+      args:
+        - TZ=${TZ}
+        - INSTALL_XDEBUG=${INSTALL_XDEBUG}
+        - APPLICATION_ENVIRONMENT=${APPLICATION_ENVIRONMENT}
+    volumes:
+      - ./backend/${BACKEND}:/var/www
+      - ./docker/apache-php/log:/var/log/apache2
+    networks:
+      - backend
+
+  # Frontend
+  web:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    depends_on:
+      - api
+    networks:
+      - frontend
+
+  # MYSQL
+  mysql:
+    build:
+      context: docker/mysql
+      dockerfile: Dockerfile
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=${TZ}
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+    ports:
+      - ${MYSQL_PORT}:3306
+    networks:
+      backend:
+        ipv4_address: 172.201.0.101
+        aliases:
+          - mysql

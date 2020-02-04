@@ -1,0 +1,8 @@
+.idea/
+.vscode/
+backend/*
+frontend/*
+.env
+*.sql
+log/
+!.gitkeep
